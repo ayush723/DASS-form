@@ -2,10 +2,25 @@ import logo from './logo.svg';
 import './App.css';
 import React, { useState } from 'react';
 
+const getSeverityClass = (level) => {
+  switch (level) {
+    case 'Normal':
+      return 'severity-normal';
+    case 'Moderate':
+      return 'severity-moderate';
+    case 'Severe':
+      return 'severity-severe';
+    case 'Extremely Severe':
+      return 'severity-extremely-severe';
+    default:
+      return '';
+  }
+};
+
 function RadioInput({ name, value, checked, onChange }) {
   return (
     <label>
-      <input type="radio" name={name} value={value} checked={checked} onChange={onChange} />
+      <input type="radio" name={name} value={value} checked={checked} onChange={onChange} required/>
       {parseInt(value)}
     </label>
   );
@@ -24,6 +39,14 @@ function generateRadioInputs(name, values, checkedValue, onChange) {
 }
 
 function App() {
+  const responseValues = ['Normal', 'Moderate', 'Severe', 'Extremely Severe'];
+
+  const [depression_level, setDepressionLevel] = useState(null);
+  const [stress_level, setStressLevel] = useState(null);
+  const [anxiety_level, setAnxietyLevel] = useState(null);
+
+  const [formSubmitted, setFormSubmitted] = useState(false);
+
   const [fullName, setFullName] = useState('');
   const [education, setEducation] = useState('');
   const [age, setAge] = useState('');
@@ -137,7 +160,7 @@ function App() {
   };
   
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     // Perform API call or submit data to backend here
     const payload = {
@@ -168,8 +191,33 @@ function App() {
       q20a: parseInt(scared),
       q21a: parseInt(meaninglessness),
     };
-
     console.log(payload)
+
+    try {
+      const response = await fetch('https://api.mixerml.com/DASPridict', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+        headers: {
+          'Content-type': 'application/json; charset=UTF-8'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`Error! Status: ${response.status}`)
+      }
+      
+      const result = await response.json();
+      console.log(result)
+      setDepressionLevel(result.deprission_level)
+      setStressLevel(result.stress_level)
+      setAnxietyLevel(result.anxiety_level)
+      setFormSubmitted(true);
+
+    } catch (err) {
+      console.error(err)
+    }
+
+    // console.log(payload)
     // Reset form fields
     // setFullName('');
     // setEducation('');
@@ -180,6 +228,19 @@ function App() {
 
   return (
     <div>
+     { formSubmitted ? (
+      <div>
+      <h2>Based on the questionare you filled, the result is:</h2>
+    <div className='result'>
+      <p><span className='key'>Name</span> : <span className='value'>{fullName}</span></p>
+      <p><span className='key'>Depression Level</span> : <span className={`${getSeverityClass(depression_level)}`}>{depression_level}</span></p>
+      <p><span className='key'>Stress Level</span> : <span className={` ${getSeverityClass(stress_level)}`}>{stress_level}</span></p>
+      <p><span className='key'>Anxiety Level</span> : <span className={` ${getSeverityClass(anxiety_level)}`}>{anxiety_level}</span></p>
+    </div>
+
+    </div>
+     ) : (
+      <div>
       <h1>DASS-21</h1>
       <div className="form-container">
       <form onSubmit={handleSubmit} className="form">
@@ -227,56 +288,56 @@ function App() {
         </div>
         
         <div className="form-row">
-        <label htmlFor="windDown">I found it hard to wind down:*</label>
+        <label htmlFor="windDown">I found it hard to wind down:</label>
         <div>
         {generateRadioInputs('windDown', ['0', '1', '2', '3'], windDown, handleChangeWindDown)}
         </div>
         </div>
         
         <div className="form-row">
-        <label htmlFor="dryness">I was aware of dryness of my mouth:*</label>
+        <label htmlFor="dryness">I was aware of dryness of my mouth:</label>
         <div>
         {generateRadioInputs('dryness', ['0', '1', '2', '3'], dryness, handleChangeDryness)}
         </div>
         </div>
 
         <div className="form-row">
-        <label htmlFor="positiveness">I couldn’t seem to experience any positive feeling at all*</label>
+        <label htmlFor="positiveness">I couldn’t seem to experience any positive feeling at all</label>
         <div>
         {generateRadioInputs('positiveness', ['0', '1', '2', '3'], positiveness, handleChangePositiveness)}
         </div>
         </div>
 
         <div className="form-row">
-        <label htmlFor="breathlesness">I experienced breathing difficulty (eg, excessively rapid breathing, breathlessness in the absence of physical exertion)*</label>
+        <label htmlFor="breathlesness">I experienced breathing difficulty (eg, excessively rapid breathing, breathlessness in the absence of physical exertion)</label>
         <div>
         {generateRadioInputs('breathlesness', ['0', '1', '2', '3'], breathlesness, handleChangeBreathlesness)}
         </div>
         </div>
 
         <div className="form-row">
-        <label htmlFor="difficultToWork">I found it difficult to work up the initiative to do things*</label>
+        <label htmlFor="difficultToWork">I found it difficult to work up the initiative to do things</label>
         <div>
         {generateRadioInputs('difficultToWork', ['0', '1', '2', '3'], difficultToWork, handleChangeDifficultToWork)}
         </div>
         </div>
 
         <div className="form-row">
-        <label htmlFor="overReact">I tended to over-react to situations*</label>
+        <label htmlFor="overReact">I tended to over-react to situations</label>
         <div>
         {generateRadioInputs('overReact', ['0', '1', '2', '3'], overReact, handleChangeOverReact)}
         </div>
         </div>
 
         <div className="form-row">
-        <label htmlFor="trembling">I experienced trembling (eg, in the hands)*</label>
+        <label htmlFor="trembling">I experienced trembling (eg, in the hands)</label>
         <div>
         {generateRadioInputs('trembling', ['0', '1', '2', '3'], trembling, handleChangeTrembling)}
         </div>
         </div>
 
         <div className="form-row">
-        <label htmlFor="nervousEnergy">I felt that I was using a lot of nervous energy*</label>
+        <label htmlFor="nervousEnergy">I felt that I was using a lot of nervous energy</label>
         <div>
         {generateRadioInputs('nervousEnergy', ['0', '1', '2', '3'], nervousEnergy, handleChangeNervousEnergy)}
         </div>
@@ -284,14 +345,14 @@ function App() {
 
 
         <div className="form-row">
-        <label htmlFor="selfFooling">I was worried about situationsin which I might panic and make a fool of myself*</label>
+        <label htmlFor="selfFooling">I was worried about situationsin which I might panic and make a fool of myself</label>
         <div>
         {generateRadioInputs('selfFooling', ['0', '1', '2', '3'], selfFooling, handleChangeSelfFooling)}
         </div>
         </div>
 
         <div className="form-row">
-        <label htmlFor="lookForward">I felt that I had nothing to look forward to*</label>
+        <label htmlFor="lookForward">I felt that I had nothing to look forward to</label>
         <div>
         {generateRadioInputs('lookForward', ['0', '1', '2', '3'], lookForward, handleChangeLookForward)}
         </div>
@@ -299,93 +360,95 @@ function App() {
 
 
         <div className="form-row">
-        <label htmlFor="agitated">I found myself getting agitated*</label>
+        <label htmlFor="agitated">I found myself getting agitated</label>
         <div>
         {generateRadioInputs('agitated', ['0', '1', '2', '3'], agitated, handleChangeAgitated)}
         </div>
         </div>
 
         <div className="form-row">
-        <label htmlFor="difficultToRelax">I found it difficult to relax*</label>
+        <label htmlFor="difficultToRelax">I found it difficult to relax</label>
         <div>
         {generateRadioInputs('difficultToRelax', ['0', '1', '2', '3'], difficultToRelax, handleChangeRelaxDifficulty)}
         </div>
         </div>
 
         <div className="form-row">
-        <label htmlFor="feltBlue">I felt down-hearted and blue*</label>
+        <label htmlFor="feltBlue">I felt down-hearted and blue</label>
         <div>
         {generateRadioInputs('feltBlue', ['0', '1', '2', '3'], feltBlue, handleChangeFeltBlue)}
         </div>
         </div>
 
         <div className="form-row">
-        <label htmlFor="intolerant">I was intolerant of anything that kept me from getting on with what I was doing*</label>
+        <label htmlFor="intolerant">I was intolerant of anything that kept me from getting on with what I was doing</label>
         <div>
         {generateRadioInputs('intolerant', ['0', '1', '2', '3'], intolerant, handleChangeIntolerant)}
         </div>
         </div>
 
         <div className="form-row">
-        <label htmlFor="panic">I felt I was close to panic*</label>
+        <label htmlFor="panic">I felt I was close to panic</label>
         <div>
         {generateRadioInputs('panic', ['0', '1', '2', '3'], panic, handleChangePanic)}
         </div>
         </div>
 
         <div className="form-row">
-        <label htmlFor="enthusiast">I was unable to become enthusiastic about anything*</label>
+        <label htmlFor="enthusiast">I was unable to become enthusiastic about anything</label>
         <div>
         {generateRadioInputs('enthusiast', ['0', '1', '2', '3'], enthusiast, handleChangeEnthusiast)}
         </div>
         </div>
 
         <div className="form-row">
-        <label htmlFor="worth">I felt I wasn’t worth much as a person*</label>
+        <label htmlFor="worth">I felt I wasn’t worth much as a person</label>
         <div>
         {generateRadioInputs('worth', ['0', '1', '2', '3'], worth, handleChangeWorth)}
         </div>
         </div>
 
         <div className="form-row">
-        <label htmlFor="touchy">I felt that I was rather touchy*</label>
+        <label htmlFor="touchy">I felt that I was rather touchy</label>
         <div>
         {generateRadioInputs('touchy', ['0', '1', '2', '3'], touchy, handleChangeTouchy)}
         </div>
         </div>
 
         <div className="form-row">
-        <label htmlFor="heart">I was aware of the action of my heart in the absence of physical exertion (eg, sense of heart rate increase, heart missing a beat)*</label>
+        <label htmlFor="heart">I was aware of the action of my heart in the absence of physical exertion (eg, sense of heart rate increase, heart missing a beat)</label>
         <div>
         {generateRadioInputs('heart', ['0', '1', '2', '3'], heart, handleChangeHeart)}
         </div>
         </div>
 
         <div className="form-row">
-        <label htmlFor="scared">I felt scared without any good reason*</label>
+        <label htmlFor="scared">I felt scared without any good reason</label>
         <div>
         {generateRadioInputs('scared', ['0', '1', '2', '3'], scared, handleChangeScared)}
         </div>
         </div>
 
         <div className="form-row">
-        <label htmlFor="meaninglessness">I felt that life was meaningless:*</label>
+        <label htmlFor="meaninglessness">I felt that life was meaningless:</label>
         <div>
         {generateRadioInputs('meaninglessness', ['0', '1', '2', '3'], meaninglessness, handleChangeMeaninglessness)}
         </div>
         </div>
-
-
-        <button type="submit" class="button">Submit</button>
+      <button type="submit" className="button">Submit</button>
 
       </form>
       </div>
-      {/* Success feedback */}
-      {/* You can display a success message here when the form is submitted successfully */}
-      {/* For example: */}
-      {/* <p>Form submitted successfully!</p> */}
+
+      </div>
+        
+      )}
+
     </div>
+
   );
 }
+
+
 
 export default App;
